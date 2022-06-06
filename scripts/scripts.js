@@ -4,6 +4,7 @@ var legendasEscala = '"-","A1 - SO R1 EDUARDO","A4 - 2S LIVIA","A5 - 1S LIDIANE"
     '"F4 - SO CUSTODIO",' + '"D5 - 1S LEONARDO",' + '"B1 - 2S CARLA GUTTEMBERG",' + '"C1 - 2S CINTRA",' + '"A4 - 2S LIVIA",' + '"I4 - 3S MARINS",' + '"J2 - 3S BEATRIZ",' + '"J2 - 3S BEATRIZ"'
 
 var tituloEscala = 'Escala Prevista CMI'
+var urlLegendas = 'php/getLegendas.php'
 var linhaInicioLegendas = 5
 var turnosEscala = [
     { legenda: '1 TURNO_0700P/1900P', primeiro: true, pernoite: false, posicoesOP: [{ titulo: 'AUX_BRIEF', dias: [] }, { titulo: 'AUX_BRIEF', dias: [] }, { titulo: 'AUX_VIG_ROTA', dias: [] }, { titulo: 'AUX_VIG_ROTA', dias: [] }, { titulo: 'AUX_VIG AD', dias: [] }, { titulo: 'AUX_VIG AD', dias: [] }, { titulo: 'OPR_VOLMET', dias: [] }, { titulo: 'OPR_VOLMET', dias: [] }, { titulo: 'OPR_VOLMET', dias: [] }, { titulo: 'SUP', dias: [] }] },
@@ -17,16 +18,35 @@ var dias = []
 var totalCols = getTotalCols()
 var arrayIndisponibilidadesDia = []
 
-function limpaLegendas(){
-    let leg =  legendasEscala.split('","')
+function limpaLegendas() {
+    let leg = legendasEscala.split('","')
     let r = []
     for (let i in leg) {
         r.push(leg[i].split(' - ')[0])
     }
-    
-    //return '"' + r.join('","') + '"'
-    return r.join('","') + '"' 
 
+    //return '"' + r.join('","') + '"'
+    return r.join('","') + '"'
+
+}
+
+function getLegendas(url) {
+    fetch(url).then(function (response) {
+        console.log( response.json())
+        return response.json();
+    }).then(function (data) {
+        var s = ""
+        let sep = '"'
+        for (b in data) {
+            s += sep + data[b] + '"'
+            sep = ' - "'
+        }
+        return s;
+
+        console.log(data);
+    }).catch(function () {
+        console.log("Erro ao tentar obtar as Legendas da Escala!");
+    });
 }
 
 function inicializaGradeEscala() {
@@ -254,7 +274,7 @@ function verificaLinha(linha, coluna) {
 }*/
 
 function inicializaEventoInput() {
-    $('#demo').on('ip_CellInput', function (event, args) {
+    function cellChanged(event, args) {
         let lin = args.options.SetCellValue.Inputs.row
         let col = args.options.SetCellValue.Inputs.col
 
@@ -263,17 +283,21 @@ function inicializaEventoInput() {
 
         //verificaIndisponibilidades(lin, col)
         atualizaIndisponibilidades()
-        verificaLinha(lin+1, col)
+        verificaLinha(lin + 1, col)
 
 
 
-    })
+    }
+    //inserir tratamento para colagem de celulas
+
+
+    $('#demo').on('ip_CellInput', cellChanged)
 
 }
 
 $(document).ready(function () {
 
-    legendasEscala = limpaLegendas()
+    legendasEscala = limpaLegendas(getLegendas(urlLegendas))
 
     inicializaGradeEscala();
 
