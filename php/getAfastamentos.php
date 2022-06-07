@@ -4,7 +4,7 @@ function get_all_records($con)
 {
     //$con = getdb();
     //include('top.php');
-    $Sql = "SELECT posto_grad,nome_de_guerra,legenda FROM operadores";
+    $Sql = "SELECT legenda,data_inicio,data_fim FROM afastamentos";
     $result = mysqli_query($con, $Sql);
     $arr_Leg = [];
     if (mysqli_num_rows($result) > 0) {
@@ -17,7 +17,7 @@ function get_all_records($con)
             $row['telefone']."</td><td>" . 
             "</td></tr>";        */
             if ($row['legenda'] !== "") {
-                $linha = $row['legenda'] . " - " . $row['posto_grad'] . " " . $row['nome_de_guerra'];
+                $linha = $row['data_inicio'] . "," . $row['data_fim'];
                 $arr_Leg[$row['legenda']] = $linha;
              //   echo $linha . '<br>';
             }
@@ -26,7 +26,7 @@ function get_all_records($con)
 
         //include('bottom.php');
     } else {
-        echo "Nenhum Operador Cadastrado!";
+        echo "Nenhum Afastamento Encontrado!";
     }
 }
 
