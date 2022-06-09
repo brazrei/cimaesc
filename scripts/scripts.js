@@ -1,3 +1,10 @@
+//calcular horas afastamento
+//calcular carga horária
+//incluir risaer na carga horária
+//ordenar operadores por carga horária
+//preencher automaticamente a escala
+
+
 var escala = '062022'
 var legendasEscala = '"-","A1 - SO R1 EDUARDO","A4 - 2S LIVIA","A5 - 1S LIDIANE","A6 - 3S COUTINHO",' +
     '"A5 - 1S LIDIANE",' + '"A2 - SO LOBO",' + '"J4 - 1S RENAN",' + '"A3 - 2S MEIRELES",' + '"F1 - SO NERY",' + '"C2 - 1S PORTUGAL",' + '"B5 - 3S MAYARA",' + '"I3 - 3S FABIANO",' + '"J1 - SO R1 AURELIO",' +
@@ -36,6 +43,7 @@ var totalCols = getTotalCols()
 var arrayIndisponibilidadesDia = [] //pernoites
 var arrayAfastamentos = []
 
+
 function limpaLegendas(legendasEscala) {
     let leg = legendasEscala.replaceAll('"', '').split(',')
     let r = []
@@ -45,7 +53,7 @@ function limpaLegendas(legendasEscala) {
     for (let i in leg) {
         let l = leg[i].split(' - ')[0]
         r.push(l.replaceAll())
-        arrayLegendas[l] = { horasTrab: 0 };
+        arrayLegendas[l] = { horasTrab: 0, diasAfastamento: [] };
         arrayHorasTrab[l] = 0
 
     }
@@ -103,7 +111,7 @@ function updateArrayAfastamentos(data) { //afastamentos escala
     for (b in data) {
         let inicio = new Date(data[b].split(',')[0])
         let fim = new Date(data[b].split(',')[1])
-        arrayAfastamentos.push({ legenda: b, inicio, fim })
+        arrayAfastamentos.push({ legenda: b.split("-")[1], inicio, fim })
     }
 
 }
@@ -115,6 +123,7 @@ function getAfastamentos(url) { //afastamentos escala
     }).then(function (data) {
         // legendasEscala = limpaLegendas(s)
         updateArrayAfastamentos(data)
+        updateDiasAfastamentosLegenda()
 
         start();
 
@@ -203,10 +212,11 @@ function getDia(lin, col) {
 function formataCabecalhoTurnos(turnosEscala) {
     let dias = getDaysInCurrentMonth(escala)
     let maxCol = 0
+    let xTurnoColOffset = turnoColOffSet
     for (let ix in turnosEscala) {
         let i = parseInt(ix)
         let turno = turnosEscala[i]
-        let colIni = turnoColOffSet
+        let colIni = xTurnoColOffset
         numPosicoes = turno.posicoesOP.length
         $('#jqs').ip_MergeRange({ range: [{ startRow: 0, startCol: colIni, endRow: 0, endCol: colIni + numPosicoes - 1 }] })
         $('#jqs').ip_MergeRange({ range: [{ startRow: 1, startCol: colIni, endRow: 1, endCol: colIni + numPosicoes - 1 }] })
@@ -223,6 +233,7 @@ function formataCabecalhoTurnos(turnosEscala) {
                 if (colIni + j > maxCol)
                     maxCol = colIni + j
                 $('#jqs').ip_CellInput({ valueRAW: legendas[c], range: [{ startRow: 2 + c, startCol: colIni + j, endRow: 2 + c, endCol: colIni + j }] })
+
                 /*$('#jqs').ip_FormatCell({
                     controlType: 'dropdown', validation: { validationCriteria: '=dropdown(' + legendasEscala + ')', validationAction: '' },
                     range: [{ startRow: 5, startCol: colIni + j, endRow: dias + 4, endCol: colIni + j }]
@@ -231,7 +242,7 @@ function formataCabecalhoTurnos(turnosEscala) {
             }
 
         }
-        turnoColOffSet = maxCol + 2
+        xTurnoColOffset = maxCol + 2
     }
 }
 
@@ -314,6 +325,7 @@ function filtraAfastamentos(dia) {
         if (data >= new Date(arrayAfastamentos[i].inicio) && data <= new Date(arrayAfastamentos[i].fim))
             arrayAfastamentosDia.push(arrayAfastamentos[i].legenda)
 
+
     }
 
     let arrL = legendasEscala.replaceAll('"', '').split(',')
@@ -323,21 +335,60 @@ function filtraAfastamentos(dia) {
     return '"' + filtrados.join('","') + '"'
 }
 
+/*
+Cria a lista dropdown para cada linha, excluindo as legendas afastadas em cada dia
+*/
 function updateCells(escala) {
     let linha = linhaInicioLegendas
     let dia = 1
     let colIni = turnoColOffSet
-    let diasMes = 31
+    let diasMes = getDaysInCurrentMonth(escala)
 
     for (let dia = 1; dia <= diasMes; dia++) {
+        let legendasDia = '=dropdown(' + filtraAfastamentos(dia) + ')'
+        let colIni = turnoColOffSet
 
-        for (let i = 0; i < totalCols-turnoColOffSet; i++) {
+        for (let i in turnosEscala) {
+            let colFim = colIni + turnosEscala[i].posicoesOP.length - 1
             //let legenda = $('#demo').ip_CellData(linha, i).display.replace("-", "")
             $('#jqs').ip_FormatCell({
-                controlType: 'dropdown', validation: { validationCriteria: '=dropdown(' + filtraAfastamentos(dia, legendasEscala) + ')', validationAction: '' },
-                range: [{ startRow: linha + dia - 1, startCol: colIni + i, endRow: linha + dia - 1, endCol: colIni + i }]
+                controlType: 'dropdown', validation: { validationCriteria: legendasDia, validationAction: '' },
+                range: [{ startRow: linha + dia - 1, startCol: colIni, endRow: linha + dia - 1, endCol: colFim }]
             })
+
+            colIni += turnosEscala[i].posicoesOP.length + 1 // mais 1 é o espaco entre os turnos
+
         }
+
+    }
+}
+
+function updateDiasAfastamentosLegenda() {
+    let mes = getMonthEscala(escala) - 1
+    let ano = getYearEscala(escala)
+    let inicioMes = new Date(ano, mes, 1)
+    let fimMes = new Date(ano, mes, getDaysInCurrentMonth(escala))
+
+    for (let i in arrayAfastamentos) {
+        let inicio = arrayAfastamentos[i].inicio
+        let fim = arrayAfastamentos[i].fim
+        if (fim < inicioMes || inicio > fimMes)
+            continue;
+        if (inicio < inicioMes)
+            inicio = inicioMes
+        if (fim > fimMes)
+            fim = fimMes
+
+        let dias
+        if (inicio.toDateString() == fim.toDateString())
+            dias = 1
+        else
+            dias = new Date(fim - inicio).getDate() + 1
+        let arrayDias = [...Array(31).keys()].map(i => i + 1).splice(inicio.getDate() - 1, dias);
+        if (arrayLegendas[arrayAfastamentos[i].legenda])
+            arrayLegendas[arrayAfastamentos[i].legenda].diasAfastamento = [...new Set(arrayLegendas[arrayAfastamentos[i].legenda].diasAfastamento.concat(arrayDias))].sort(function (a, b) { //set remove repetidos
+                return a - b; //ordena numeros
+            });
     }
 }
 
@@ -479,11 +530,11 @@ function start() {
 
     fillDaysWeek(escala);
 
-    updateCells(escala);
-
     //formataCelulasComLegenda(escala);
 
     formataCabecalhoTurnos(turnosEscala)
+
+    updateCells(escala);
 
     inicializaEventoInput();
 }
