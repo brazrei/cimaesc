@@ -44,6 +44,27 @@ var arrayIndisponibilidadesDia = [] //pernoites
 var arrayAfastamentos = []
 
 
+function sortNumber(arr,unique=false) {
+
+    arr.sort(function (a, b) {
+        if (parseInt(a) > parseInt(b)) {
+            return 1;
+        }
+        if (parseInt(a) < parseInt(b)) {
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+    });
+
+	if (unique)  
+    	return [... new Set(arr)]
+    else
+    	return arr
+    
+}
+
+
 function limpaLegendas(legendasEscala) {
     let leg = legendasEscala.replaceAll('"', '').split(',')
     let r = []
@@ -53,7 +74,7 @@ function limpaLegendas(legendasEscala) {
     for (let i in leg) {
         let l = leg[i].split(' - ')[0]
         r.push(l.replaceAll())
-        arrayLegendas[l] = { horasTrab: 0, diasAfastamento: [] };
+        arrayLegendas[l] = { horasTrab: 0, diasAfastamento: [], diasTrab: [] };
         arrayHorasTrab[l] = 0
 
     }
@@ -492,6 +513,7 @@ function inicializaEventoInput() {
 
 function updateHorasTrab() {
     limpaLegendas(legendasEscala)
+    updateDiasAfastamentosLegenda()
     for (let i in turnosEscala) {
         for (let j in turnosEscala[i].posicoesOP) {
             let horas = turnosEscala[i].horas
@@ -500,6 +522,11 @@ function updateHorasTrab() {
                 let leg = turnosEscala[i].posicoesOP[j].dias[k]
                 if (arrayLegendas[leg]) {
                     arrayLegendas[leg].horasTrab = arrayLegendas[leg].horasTrab + horas
+                    if (!arrayLegendas[leg].diasTrab)
+                        arrayLegendas[leg].diasTrab = []
+
+                    arrayLegendas[leg].diasTrab.push (k)
+                    arrayLegendas[leg].diasTrab.sort()
                     arrayHorasTrab[leg] = arrayLegendas[leg].horasTrab
                 }
             }
