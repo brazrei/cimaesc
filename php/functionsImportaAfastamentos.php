@@ -27,6 +27,7 @@ function get_all_records_afastamentos($con){
                           "<th>DATA INICIAL</th>".
                           "<th>DATA FINAL</th>".
                           "<th>DESCRIÇÃO</th>".
+                          "<th>CARGA HORÁRIA</th>".
                           "</tr></thead><tbody>";
        while($row = mysqli_fetch_assoc($result)) {
          echo "<tr><td>" . 
@@ -35,6 +36,7 @@ function get_all_records_afastamentos($con){
             $row['data_inicio']."</td><td>" . 
             $row['data_fim']."</td><td>" . 
             $row['descricao']."</td><td>" . 
+            $row['carga_horaria']."</td><td>" . 
             "</td></tr>";        
        }
     
@@ -64,7 +66,8 @@ if(isset($_POST["Import"])){
           if ($getData[0] !== "" && $getData[1] !== "" && $getData[2] !== "" && $getData[3] !== "" && $getData[5] !== ""){ 
             $inicio = convertDateToMySQL($getData[2]);
             $fim = convertDateToMySQL($getData[3]);
-            $sql = "INSERT INTO afastamentos (legenda,nome_de_guerra,data_inicio,data_fim,descricao) values ('".$getData[0]."','".$getData[1]."','".$inicio."','".$fim."','".$getData[5]."')";
+            $carga = str_replace(",",".",$getData[6]);
+            $sql = "INSERT INTO afastamentos (legenda,nome_de_guerra,data_inicio,data_fim,descricao,carga_horaria) values ('".$getData[0]."','".$getData[1]."','".$inicio."','".$fim."','".$getData[5]."','".$carga."')";
             echo $sql;
             $result = mysqli_query($con, $sql);
             echo $result;
