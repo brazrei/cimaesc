@@ -59,7 +59,7 @@ function inicializaEventoClick() {
 }
 
 function setStrCell(lin, col, txt, color = false, title = false) {
-    
+
     $('#demo').ip_FormatCell({ style: `font-weight: bold;`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
     if (color)
         $('#demo').ip_FormatCell({ style: `color:${color};`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
@@ -68,20 +68,20 @@ function setStrCell(lin, col, txt, color = false, title = false) {
     $('#demo').ip_CellInput({ valueRAW: txt, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
 }
 
+function setCellColor(lin, col, color) {
+    $('#demo').ip_FormatCell({ style: `background-color:${color};`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
+
+}
+
+function setFontColor(lin, col, color) {
+    $('#demo').ip_FormatCell({ style: `color:${color};`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
+
+}
+
+function setColColor(linIni, linFin, col, color) {
+    $('#demo').ip_FormatCell({ style: `background-color:${color};`, range: [{ startRow: linIni, startCol: col, endRow: linFin, endCol: col }] })
+}
 function fillLegendas() {
-    function setCellColor(lin, col, color) {
-        $('#demo').ip_FormatCell({ style: `background-color:${color};`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
-
-    }
-
-    function setFontColor(lin, col, color) {
-        $('#demo').ip_FormatCell({ style: `color:${color};`, range: [{ startRow: lin, startCol: col, endRow: lin, endCol: col }] })
-
-    }
-
-    function setColColor(linIni, linFin, col, color) {
-        $('#demo').ip_FormatCell({ style: `background-color:${color};`, range: [{ startRow: linIni, startCol: col, endRow: linFin, endCol: col }] })
-    }
 
     //
     opener.updateArrayFolgas()
@@ -156,6 +156,26 @@ function fillLegendas() {
         $('#demo').ip_FormatCell({ style: `color:black;font-weight: bold;text-decoration: none;`, range: [{ startRow: linha + 2 + diasMes + 1, startCol: col, endRow: linha + 2 + diasMes + 1, endCol: col }] })
         $('#demo').ip_FormatCell({ style: `color:black;font-weight: bold;text-decoration: none;`, range: [{ startRow: linha + 2 + diasMes + 2, startCol: col, endRow: linha + 2 + diasMes + 2, endCol: col }] })
         $('#demo').ip_FormatCell({ style: `color:black;font-weight: bold;text-decoration: none;`, range: [{ startRow: linha + 2 + diasMes + 3, startCol: col, endRow: linha + 2 + diasMes + 3, endCol: col }] })
+        col++
+    }
+}
+
+function selectFolgados(dia) {
+    let linha = 2
+    let colIni = 2
+    let col = colIni
+
+    let arrLeg = opener.arrayLegendas
+
+    for (let i in arrLeg) {
+        let leg = $('#demo').ip_CellData(linha, col).display
+        if (arrLeg[leg].diasFolga.indexOf(dia) > -1) {
+            setCellColor(linha,col,"green");
+            setFontColor(linha,col,"white");
+        } else {
+            setCellColor(linha,col,"white");
+            setFontColor(linha,col,"black");
+        }
         col++
     }
 }

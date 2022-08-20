@@ -3,6 +3,8 @@
 //incluir risaer na carga horária
 //ordenar operadores por carga horária
 //preencher automaticamente a escala
+// ip_GridProps['demo'].selectedCell.row
+
 
 var telaAuxOnline, telaAux
 var escala = '072022'
@@ -11,8 +13,8 @@ var legendasEscala = '"-","A1 - SO R1 EDUARDO","A4 - 2S LIVIA","A5 - 1S LIDIANE"
     '"F4 - SO CUSTODIO",' + '"D5 - 1S LEONARDO",' + '"B1 - 2S CARLA GUTTEMBERG",' + '"C1 - 2S CINTRA",' + '"A4 - 2S LIVIA",' + '"I4 - 3S MARINS",' + '"J2 - 3S BEATRIZ",' + '"J2 - 3S BEATRIZ"'
 
 var tituloEscala = 'Escala Prevista CMI'
-var urlLegendas = 'php/getLegendas.php'
-var urlAfastamentos = 'php/getAfastamentos.php'
+var urlLegendas = '../php/getLegendas.php'
+var urlAfastamentos = '../php/getAfastamentos.php'
 var arrayLegendas = []
 var arrayHorasTrab = []
 var turnoColOffSet = 2
@@ -271,7 +273,7 @@ function updateArrayAfastamentos(data) { //afastamentos escala
         let fim = new Date(arrDado[1])
 
 
-        arrayAfastamentos.push({ legenda, inicio, fim, carga: parseFloat(arrDado[2])})
+        arrayAfastamentos.push({ legenda, inicio, fim, carga: parseFloat(arrDado[2]) })
 
     }
 
@@ -359,8 +361,8 @@ function updateDias(l, c) {
         cont++ // pula coluna entre os turnos  
     }
 
-    if (!dias[lin])
-        dias[lin] = []
+    if (!dias[l])
+        dias[l] = []
     //if (!dias[lin][col])
 
 
@@ -554,21 +556,33 @@ function updateCargaHoraria() {
     }
     let totalHorasAfastamento = 0
     let totalLegendas = 0
+    let totalHorasRisaer = 0
+    let totalHoraExtra = 0
     for (let i in arrayLegendas) {
         if (i !== '-') {
             totalLegendas++
-            totalHorasAfastamento += arrayLegendas[i].diasAfastamento.length * horasEscalaDia
+            let diasRisaer = 0
+            if (arrayRISAER[i]) {
+                diasRisaer = arrayRISAER[i].length
+
+            }
+            let horasRisaer = diasRisaer * 24
+            totalHorasRisaer += horasRisaer
+            if (!arrayLegendas[i].horasTrabExtra)
+                arrayLegendas[i].horasTrabExtra = 0
+            totalHoraExtra += (arrayLegendas[i].horasTrabExtra / 24) * horasEscalaDia
+            totalHorasAfastamento += (arrayLegendas[i].diasAfastamento.length) * horasEscalaDia
         }
     }
 
     //cargaHorariaTotalAfastam = (totalLegendas * diasMes * horasEscalaDia) //pra quem tem afastamentos a proporcao de trabalho não leverá em conta os afastamentos
-    forcaHorariaTotal = (totalLegendas * diasMes * horasEscalaDia) - totalHorasAfastamento
+    forcaHorariaTotal = (totalLegendas * diasMes * horasEscalaDia) - totalHorasAfastamento + totalHoraExtra // + totalCargaAfastamentos
     aux = 0
     for (let i in arrayLegendas) {
         if (i !== '-') {
-            arrayLegendas[i].cargaMaxima = ((diasMes - arrayLegendas[i].diasAfastamento.length) * horasEscalaDia) / forcaHorariaTotal
+            arrayLegendas[i].cargaMaxima = ((diasMes - arrayLegendas[i].diasAfastamento.length + (arrayLegendas[i].horasTrabExtra / 24)) * horasEscalaDia) / forcaHorariaTotal
             arrayLegendas[i].cargaMaximaEmHoras = arrayLegendas[i].cargaMaxima * (horasEscalaDia * diasMes)
-            arrayLegendas[i].cargaMaximaHD = ((diasMes - arrayLegendas[i].diasAfastamento.length) * horasEscalaDia)
+            arrayLegendas[i].cargaMaximaHD = ((diasMes - arrayLegendas[i].diasAfastamento.length + (arrayLegendas[i].horasTrabExtra / 24)) * horasEscalaDia)
             arrayLegendas[i].cargaTrab = arrayLegendas[i].cargaMaxima > 0 ? arrayLegendas[i].horasTrab / arrayLegendas[i].cargaMaximaEmHoras : 0
             //            arrayLegendas[i].cargaTrabMin = minH / arrayLegendas[i].cargaMaxima
             arrayLegendas[i].percentualCargaTrab = Math.round((arrayLegendas[i].horasTrab / arrayLegendas[i].cargaMaximaEmHoras) * 100)
@@ -601,10 +615,17 @@ function updateDiasAfastamentosLegenda() {
         else
             dias = new Date(fim - inicio).getDate() + 1
         let arrayDias = [...Array(diasMes).keys()].map(i => i + 1).splice(inicio.getDate() - 1, dias);
-        if (arrayLegendas[arrayAfastamentos[i].legenda])
+        if (arrayLegendas[arrayAfastamentos[i].legenda]) {
             arrayLegendas[arrayAfastamentos[i].legenda].diasAfastamento = [...new Set(arrayLegendas[arrayAfastamentos[i].legenda].diasAfastamento.concat(arrayDias))].sort(function (a, b) { //set remove repetidos
                 return a - b; //ordena numeros
             });
+            if (!arrayLegendas[arrayAfastamentos[i].legenda].horasTrabExtra)
+                arrayLegendas[arrayAfastamentos[i].legenda].horasTrabExtra = 0
+            arrayLegendas[arrayAfastamentos[i].legenda].horasTrab += arrayAfastamentos[i].carga
+            if (arrayAfastamentos[i].carga > 0) {
+                arrayLegendas[arrayAfastamentos[i].legenda].horasTrabExtra += arrayAfastamentos[i].carga
+            }
+        }
     }
 }
 
@@ -653,10 +674,10 @@ function verificaLinha(linha, coluna, OnlyCheck = false) {
         }
 
         //verifica RISAER
-        if (checkRISAER(dado, dia-1)) //falta verificar o risaer do dia seguinte ao pernoite
+        if (checkRISAER(dado, dia - 1)) //falta verificar o risaer do dia seguinte ao pernoite
             ok = false
 
-        if (checkRISAER(dado, dia+1) && checkPernoite(dado,dia)) //falta verificar o risaer do dia seguinte ao pernoites
+        if (checkRISAER(dado, dia + 1) && checkPernoite(dado, dia)) //falta verificar o risaer do dia seguinte ao pernoites
             ok = false
 
 
@@ -734,11 +755,11 @@ function checkPernoite(legenda, dia) {
     diasMes = getDaysInCurrentMonth(escala)
     if (dia < 1 || dia > diasMes)
         return false
-        
-    for (let i in turnosEscala){
+
+    for (let i in turnosEscala) {
         if (turnosEscala[i].pernoite) {
-            for (let j in turnosEscala[i].posicoesOP){
-                if (turnosEscala[i].posicoesOP[j].dias[dia] == legenda )
+            for (let j in turnosEscala[i].posicoesOP) {
+                if (turnosEscala[i].posicoesOP[j].dias[dia] == legenda)
                     return true
             }
         }
@@ -862,8 +883,8 @@ function selectAllLeg(leg, moveToStart = false) {
         //colorir as indisponibilidades
         if (arrayLegendas[leg])
             if (arrayLegendas[leg].diasAfastamento.indexOf(dia) < 0) {
-                $('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: l, startCol: 0, endRow: l, endCol: 0 }] })
-                $('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: l, startCol: 0, endRow: l, endCol: 0 }] })
+                //$('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: l, startCol: 0, endRow: l, endCol: 0 }] })
+                //$('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: l, startCol: 0, endRow: l, endCol: 0 }] })
             }
             else {
                 $('#demo').ip_FormatCell({ style: 'background-color:red;', range: [{ startRow: l, startCol: 0, endRow: l, endCol: 0 }] })
@@ -886,22 +907,47 @@ function clearBorders() {
 }
 
 function inicializaEventoClick() {
+    function clearColorDays() {
+        let li = linhaInicioLegendas
+        let lf = li + getDaysInCurrentMonth()
+        let c = 0
+
+        $('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+        $('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    }
+
+    function selectDay(linha) {
+        let li = lf = linha
+        let c = 0
+        $('#demo').ip_FormatCell({ style: 'background-color:#555;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+        $('#demo').ip_FormatCell({ style: 'color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    }
 
     $('#demo').on('click', function (arg) {
         /*let oldData = $('#demo').ip_CellData(0, 0).display
         $('#demo').ip_Copy();
         $('#demo').ip_Paste({row:0,col:0});
         globalSelectedLegenda = $('#demo').ip_CellData(0, 0).display
-
+ 
         $('#jqs').ip_CellInput({ valueRAW: oldData, range: [{ startRow: 0, startCol: 0, endRow: 0, endCol: 0 }] })
-
+ 
         */
+
+        globalSelectedLegenda = arg.target.innerText
+        ip_GridProps['demo'].selectedCell.row
+
+        clearColorDays()
+
+        clearBorders(globalBorderControl)
+
+        selectDay(ip_GridProps['demo'].selectedCell.row)
+
         if (arg.target.innerText == "")
             return false
 
-        globalSelectedLegenda = arg.target.innerText
+        let dia = $('#demo').ip_CellData(ip_GridProps['demo'].selectedCell.row, 0).display
 
-        clearBorders(globalBorderControl)
+        telaAux.selectFolgados(dia)
 
         selectAllLeg(globalSelectedLegenda)
 
@@ -967,10 +1013,10 @@ function updateHorasTrab() {
         }
     }
     //soma horas RISAER
-    for (let i in arrayRISAER) {
+    /*for (let i in arrayRISAER) {
         if (arrayLegendas[i])
             arrayLegendas[i].horasTrab += 24 * arrayRISAER[i].length
-    }
+    }*/
 }
 /*
 function autoFill() {
@@ -1012,14 +1058,25 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
                                        maiorCargaFolga.carga = cargaFolga
                                    }
                
-
+ 
             }*/
             }
         }
 
         return maiorCargaFolga.legenda //se todos forem estourar a carga máxima, pega o que estiver com a maior folga horária relativa
     }
-
+    function getColLegenda(legenda, dia) {
+        let col = 0
+        for (let i in turnosEscala) {
+            for (let j in turnosEscala[i].posicoesOP) {
+                if (turnosEscala[i].posicoesOP[j].dias[dia] == legenda)
+                    return col
+                col++
+            }
+            col++ // espaco entre turnos
+        }
+        return -1
+    }
 
     function montaPordia() {
         let arrSvcs = []
@@ -1096,8 +1153,12 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
 
         let arrLegs = []
 
-        arrLegs = filtraCargaMinima(arrayLegendas)
-        arrLegs = sortByCargaMax(arrayLegendas, -1) // com -1 começa pelos que tëm menos indisponibilidades
+        arrLegs = filtraCargaMinima(arrayLegendas) // remove operadores indiponiveis por todo o mês
+        if (!forcaTroca) //se nao é troca, pega o que tem menos indisponibilidades
+            arrLegs = sortByCargaMax(arrLegs, -1) // com -1 começa pelos que tëm menos indisponibilidades
+        else
+            arrLegs = sortByCargaTrab(arrLegs) // com -1 começa pelos que tëm menos indisponibilidades
+
         // arrLegs = sortByCargaTrab(arrayLegendas) // começa sempre pelos que tëm menos percentual trabalhado
         let posicoesDia = getPosicoesDia(true) // true = com espacos
         let totalEscalados = 0
@@ -1126,8 +1187,8 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
             let tentativas = 1
             let reverse = false //alterna o inicio das buscas pelo pernoite/manha
             let colAtual
-            if (legenda == "F3")
-                console.log("oi")
+            //if (legenda == "F3")
+            //    console.log("oi")
             while (!cargaFull && tentativas < 3) {
                 //for (let d in arrDiasDisp) {
                 let dia = arrDiasDisp[d]
@@ -1140,15 +1201,32 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
                 //let cargaFull = false
                 let proximoDia = false
 
+                let legendasDoDia //estando aqui, a troca so eh feita dentro do turno correto
+                let ordenadosPorCarga
+                let menosFolgado
+                let colSai
+                if (forcaTroca) {
+                    legendasDoDia = getEscaladosDia(dia)
+                    ordenadosPorCarga = sortByCargaTrab(legendasDoDia, -1)
+                    menosFolgado = ordenadosPorCarga[0].legenda
+                    //menosFolgado = sortByMenosFolgado(ordenadosPorCarga, dia)[0].legenda
+                    colSai = getColLegenda(menosFolgado, dia) + turnoColOffSet
+                }
+
                 let i = reverse ? turnosEscala.length - 1 : 0
                 while (!reverse && i < turnosEscala.length || reverse && i >= 0) {
 
                     i = parseInt(i)
 
-                    if (turnosEscala[i].pernoite && dia < diasMes && arrayLegendas[legenda].diasTrab.indexOf(dia + 1) > 0) // se escalao no dia posterior, pular o turno de pernoite
+                    let legendaEntra = legenda
+                    /*if (forcaTroca) 
+                        legendaEntra = menosFolgado*/
+
+                    if (turnosEscala[i].pernoite && dia < diasMes && arrayLegendas[legendaEntra].diasTrab.indexOf(dia + 1) > 0) // se escalado no dia posterior, pular o turno de pernoite
                         break
-                    if (checkRISAER(legenda, dia - 1) || (checkRISAER(legenda, dia + 1) && turnosEscala[i].pernoite)) //evita conflitos RISAER
+                    if (checkRISAER(legendaEntra, dia - 1) || (checkRISAER(legendaEntra, dia + 1) && turnosEscala[i].pernoite)) //evita conflitos RISAER
                         break
+
                     for (let c in turnosEscala[i].posicoesOP) {
                         globalL = dia + linhaInicioLegendas - 1
                         globalC = colAtual
@@ -1170,8 +1248,18 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
                                 reverse = !reverse
                                 break;
                             }
-                        } else { //se é uma troca forçada
-                            let legendasDoDia = sortByMenosFolgado(getEscaladosDia(dia), dia)
+                        } else if (colAtual == colSai && (!arrayIndisponibilidadesDia[dia] || (arrayIndisponibilidadesDia[dia].indexOf(legenda) < 0)) && arrayLegendas[legenda].diasTrab.indexOf(dia) < 0) { //se é uma troca forçada
+                            globalC = colSai
+                            console.log(`Trocou o ${menosFolgado} pelo ${legenda}, no dia ${dia} `)
+                            $('#jqs').ip_CellInput({ valueRAW: legenda, range: [{ startRow: globalL, startCol: colSai, endRow: globalL, endCol: colSai }] }) //escala o mais folgado
+
+                            totalEscalados++
+                            updateHorasTrab()
+                            updateCargaHoraria()
+                            updateArrayFolgas()
+                            verificaLinha(globalL, 0, false)
+                            cargaFull = true;
+                            break;
 
                         }
                         $('#demo').ip_FormatCell({ style: 'border-color:#eee; border-width: 1px 1px 1px 1px; border-style: solid solid solid solid;', range: [{ startRow: globalL, startCol: colAtual, endRow: globalL, endCol: colAtual }] })
@@ -1185,6 +1273,7 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
                     reverse ? i-- : i++
                 }
                 //colIni++ //especo entre
+
                 if (cargaFull)
                     break
                 if (carga24 >= 24) {
@@ -1199,6 +1288,9 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
                     tentativas++
                 }
             }
+            if (forcaTroca) //se ajuste da escala troca apenas a primeira legenda
+                break;
+
         }
         return totalEscalados
     }
@@ -1214,7 +1306,7 @@ function montaEscala(tipo = 'legenda', forcaTroca = false) {
     disableTelaAux = false
 
     if (telaAux)
-        setTimeout(telaAux.fillLegendas,10);
+        setTimeout(telaAux.fillLegendas, 10);
     return r
 }
 
@@ -1261,7 +1353,7 @@ $(document).ready(function () {
 function openTelaAux() {
     if (!telaAux || telaAux.closed) {
         telaAuxOnline = true
-        telaAux = window.open("tela-aux.html", 'ESCALA ' + escala, '')
+        telaAux = window.open("../tela-aux.html", 'ESCALA ' + escala, '')
         // smartPlot = window.open("../../smartplot8/index.html", 'SMART PLOT', 'menubar=no,status=no')
     }
     else
