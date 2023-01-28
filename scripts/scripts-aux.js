@@ -160,7 +160,24 @@ function fillLegendas() {
     }
 }
 
-function selectFolgados(dia) {
+function clearColorDays() {
+    let li = opener.linhaInicioLegendas
+    let lf = li + opener.getDaysInCurrentMonth()
+    let c = 0
+
+    $('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    $('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+}
+
+function selectDay(linha) {
+    let li = lf = linha
+    let c = 0
+    $('#demo').ip_FormatCell({ style: 'background-color:#555;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    $('#demo').ip_FormatCell({ style: 'color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+}
+
+
+function selectFolgados(dia, legMain) {
     let linha = 2
     let colIni = 2
     let col = colIni
@@ -169,7 +186,10 @@ function selectFolgados(dia) {
 
     for (let i in arrLeg) {
         let leg = $('#demo').ip_CellData(linha, col).display
-        if (arrLeg[leg].diasFolga.indexOf(dia) > -1) {
+        if (leg == legMain) {
+            setCellColor(linha,col,"#555");
+            setFontColor(linha,col,"white");
+        } else if (arrLeg[leg] && arrLeg[leg].diasFolga && arrLeg[leg].diasFolga.indexOf(dia) > -1) {
             setCellColor(linha,col,"green");
             setFontColor(linha,col,"white");
         } else {

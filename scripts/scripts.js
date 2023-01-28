@@ -906,22 +906,52 @@ function clearBorders() {
     globalBorderControl = []
 }
 
+function clearColorDays() {
+    let li = linhaInicioLegendas
+    let lf = li + getDaysInCurrentMonth()
+    let c = 0
+
+    $('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    $('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+}
+
+function selectDay(linha) {
+    let li = lf = linha
+    let c = 0
+    $('#demo').ip_FormatCell({ style: 'background-color:#555;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+    $('#demo').ip_FormatCell({ style: 'color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
+}
+
+function updateDisplay(arg = false) {
+    let leg = ip_GridProps['demo'].selectedCell.innerText
+
+    if (arg && arg.target.innerText !== '')
+        globalSelectedLegenda = arg.target.innerText
+    else
+        globalSelectedLegenda = leg
+    ip_GridProps['demo'].selectedCell.row
+
+    clearColorDays()
+    telaAux.clearColorDays()
+
+
+    clearBorders(globalBorderControl)
+
+    selectDay(ip_GridProps['demo'].selectedCell.row)
+    telaAux.selectDay(ip_GridProps['demo'].selectedCell.row)
+
+    if (arg.target.innerText == "")
+        return false
+
+    let dia = $('#demo').ip_CellData(ip_GridProps['demo'].selectedCell.row, 0).display
+
+    telaAux.selectFolgados(dia, leg)
+
+    selectAllLeg(globalSelectedLegenda)
+
+}
+
 function inicializaEventoClick() {
-    function clearColorDays() {
-        let li = linhaInicioLegendas
-        let lf = li + getDaysInCurrentMonth()
-        let c = 0
-
-        $('#demo').ip_FormatCell({ style: 'background-color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
-        $('#demo').ip_FormatCell({ style: 'color:black;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
-    }
-
-    function selectDay(linha) {
-        let li = lf = linha
-        let c = 0
-        $('#demo').ip_FormatCell({ style: 'background-color:#555;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
-        $('#demo').ip_FormatCell({ style: 'color:white;', range: [{ startRow: li, startCol: c, endRow: lf, endCol: c }] })
-    }
 
     $('#demo').on('click', function (arg) {
         /*let oldData = $('#demo').ip_CellData(0, 0).display
@@ -933,23 +963,8 @@ function inicializaEventoClick() {
  
         */
 
-        globalSelectedLegenda = arg.target.innerText
-        ip_GridProps['demo'].selectedCell.row
+        updateDisplay(arg)
 
-        clearColorDays()
-
-        clearBorders(globalBorderControl)
-
-        selectDay(ip_GridProps['demo'].selectedCell.row)
-
-        if (arg.target.innerText == "")
-            return false
-
-        let dia = $('#demo').ip_CellData(ip_GridProps['demo'].selectedCell.row, 0).display
-
-        telaAux.selectFolgados(dia)
-
-        selectAllLeg(globalSelectedLegenda)
 
     })
 
