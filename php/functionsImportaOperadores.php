@@ -39,7 +39,7 @@ function get_all_records($con){
     //$con->close();
 }
 
-ob_start();
+//ob_start();
 
 include ('connect.php');
 
@@ -50,10 +50,14 @@ if(isset($_POST["Import"])){
      {
         $file = fopen($filename, "r");
         while (($getData = fgetcsv($file, 10000, ",")) !== FALSE) {
-          $sql = "INSERT INTO operadores (posto_grad,quadro,saram,legenda,nome_completo,nome_de_guerra,email,cpf,telefone) values ('".$getData[0]."','".$getData[1]."','".$getData[2]."','".$getData[3]."','".$getData[4]."','".$getData[5]."','".$getData[6]."','".$getData[7]."','".$getData[8]."')";
-          //echo "'".$getData[0]."','".$getData[1]."','".$getData[2]."','".$getData[3]."','".$getData[4]."')";
+          $tel = substr($getData[8],0,25);
+          $sql = "INSERT INTO operadores (posto_grad,quadro,saram,legenda,nome_completo,nome_de_guerra,email,cpf,telefone) values ('".$getData[0]."','".$getData[1]."','".$getData[2]."','".$getData[3]."','".$getData[4]."','".$getData[5]."','".$getData[6]."','".$getData[7]."','".$tel."')";
+          echo "('".$getData[0]."','".$getData[1]."','".$getData[2]."','".$getData[3]."','".$getData[4]."','".$getData[5]."','".$getData[6]."','".$getData[7]."','".$tel."')<br>";
           
           $result = mysqli_query($con, $sql);
+          if (!$result)
+            echo mysqli_errno($con) . "<br>";
+
         }
         /*
         if(!isset($result)){
@@ -64,7 +68,7 @@ if(isset($_POST["Import"])){
         }*/
 
         fclose($file);  
-        ob_end_clean();
+        //ob_end_clean();
         get_all_records($con);
 
     } 

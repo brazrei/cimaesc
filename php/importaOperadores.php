@@ -9,7 +9,7 @@
     <div id="wrap">
         <div class="container">
             <div class="row">
-                <form class="form-horizontal" action="functions.php" method="post" name="upload_excel" enctype="multipart/form-data">
+                <form class="form-horizontal" action="functionsImportaOperadores.php" method="post" name="upload_excel" enctype="multipart/form-data">
                     <fieldset>
                         <!-- Form Name -->
                         <legend>Form Name</legend>
